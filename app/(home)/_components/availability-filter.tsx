@@ -1,0 +1,46 @@
+import React from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+interface AvailabilityFilterProps {
+  availabilityFilter: "All" | "Available" | "Out of Stock";
+  setAvailabilityFilter: (filter: "All" | "Available" | "Out of Stock") => void;
+}
+
+const AvailabilityFilter = ({
+  availabilityFilter,
+  setAvailabilityFilter,
+}: AvailabilityFilterProps) => {
+  const options = [
+    { value: "All", label: "Tất cả" },
+    { value: "Available", label: "Còn hàng" },
+    { value: "Out of Stock", label: "Hết hàng" },
+  ] as const;
+
+  return (
+    <Select
+      value={availabilityFilter}
+      onValueChange={(value) =>
+        setAvailabilityFilter(value as "All" | "Available" | "Out of Stock")
+      }
+    >
+      <SelectTrigger className="w-[180px] cursor-pointer">
+        <SelectValue placeholder="Lọc theo tình trạng" />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map((option) => (
+          <SelectItem key={option.value} value={option.value} className="cursor-pointer">
+            {option.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+};
+
+export default AvailabilityFilter;

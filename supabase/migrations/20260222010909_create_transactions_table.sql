@@ -1,0 +1,102 @@
+-- ENUMS
+create type payment_method as enum ('Cash', 'Credit Card', 'Debit Card', 'E-Wallet');
+create type transaction_status as enum ('Completed', 'Pending', 'Cancelled');
+
+-- TABLE
+create table if not exists transactions (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid not null references businesses(id) on delete cascade,
+  transaction_number text unique not null,
+  customer_name text,
+  subtotal numeric(10, 2) not null check (subtotal >= 0),
+  discount_amount numeric(10, 2) not null default 0 check (discount_amount >= 0),
+  promo_code text default null,
+  tax_rate numeric(5, 4) not null default 0.12,
+  tax_amount numeric(10, 2) not null check (tax_amount >= 0),
+  total_amount numeric(10, 2) not null check (total_amount >= 0),
+  payment_method payment_method not null,
+  status transaction_status not null default 'Pending',
+  user_id uuid references public.profiles(id) on delete set null,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- INDEXES
+create index if not exists transactions_business_id_idx on transactions(business_id);
+create index if not exists transactions_transaction_number_idx on transactions(transaction_number);
+create index if not exists transactions_status_idx on transactions(status);
+create index if not exists transactions_payment_method_idx on transactions(payment_method);
+create index if not exists transactions_user_id_idx on transactions(user_id);
+create index if not exists transactions_created_at_idx on transactions(created_at desc);
+create index if not exists transactions_promo_code_idx on transactions(promo_code);
+
+-- FUNCTIONS & TRIGGERS
+create trigger update_transactions_updated_at
+  before update on transactions
+  for each row
+  execute function update_updated_at_column(); -- defined in businesses migration
+
+-- Auto-generate transaction number (format: TRX-YYYY-XXXXXX)
+create or replace function generate_transaction_number()
+returns text as $$
+declare
+  year_part text;
+  sequence_num text;
+begin
+  year_part := to_char(now(), 'YYYY');
+  select lpad((count(*) + 1)::text, 6, '0')
+  into sequence_num
+  from transactions
+  where extract(year from created_at) = extract(year from now());
+  return 'TRX-' || year_part || '-' || sequence_num;
+end;
+$$ language plpgsql;
+
+create or replace function set_transaction_number()
+returns trigger as $$
+begin
+  if new.transaction_number is null then
+    new.transaction_number := generate_transaction_number();
+  end if;
+  return new;
+end;
+$$ language plpgsql;
+
+create trigger set_transaction_number_trigger
+  before insert on transactions
+  for each row
+  execute function set_transaction_number();
+
+-- Auto-calculate tax and total (now accounts for discount)
+create or replace function calculate_transaction_totals()
+returns trigger as $$
+begin
+  new.tax_amount := (new.subtotal - new.discount_amount) * new.tax_rate;
+  new.total_amount := (new.subtotal - new.discount_amount) + new.tax_amount;
+  return new;
+end;
+$$ language plpgsql;
+
+create trigger calculate_transaction_totals_trigger
+  before insert or update of subtotal, tax_rate, discount_amount on transactions
+  for each row
+  execute function calculate_transaction_totals();
+
+-- RLS
+alter table transactions enable row level security;
+
+create policy "Users can view transactions in their business"
+  on transactions for select
+  using (business_id = get_my_business_id());
+
+create policy "Users can create transactions in their business"
+  on transactions for insert
+  with check (business_id = get_my_business_id());
+
+create policy "Users can update transactions in their business"
+  on transactions for update
+  using (business_id = get_my_business_id());
+
+create policy "Owners and admins can delete transactions"
+  on transactions for delete
+  using (business_id = get_my_business_id() and is_admin_or_owner());

@@ -1,0 +1,127 @@
+"use client";
+
+import { ColumnDef } from "@tanstack/react-table";
+import { ActivityLogsWithProfile } from "@/types/activity-logs.types";
+import { Badge } from "@/components/ui/badge";
+import { DataTable } from "@/components/data-table";
+import { useActivityLogs } from "@/hooks/useActivityLogs";
+import { getActionColor } from "@/lib/utils";
+import { useMemo, useState } from "react";
+import ActivityLogDetailsSheet from "@/components/sheets/activity-log-details-sheet";
+import DataTableFilter from "@/components/data-table-filter";
+
+const ActivityLogsTable = () => {
+  const { data, isLoading, error } = useActivityLogs();
+
+  const [selectedLog, setSelectedLog] =
+    useState<ActivityLogsWithProfile | null>(null);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+
+  const [filters, setFilters] = useState<{
+    actions: string[];
+    subjects: string[];
+  }>({
+    actions: [],
+    subjects: [],
+  });
+
+  const filteredData = useMemo(() => {
+    if (!data) return [];
+
+    return data.filter((log) => {
+      const inAction =
+        filters.actions.length === 0 || filters.actions.includes(log.action);
+      const inSubject =
+        filters.subjects.length === 0 || filters.subjects.includes(log.subject);
+      return inAction && inSubject;
+    });
+  }, [data, filters]);
+
+  const columns: ColumnDef<ActivityLogsWithProfile>[] = [
+    {
+      id: "user",
+      header: "Nhân viên",
+      accessorFn: (row) =>
+        row.profiles
+          ? `${row.profiles.first_name} ${row.profiles.last_name}`
+          : "Không rõ",
+      cell: ({ row }) => (
+        <div>
+          <div className="text-sm font-medium">
+            {row.original.profiles
+              ? `${row.original.profiles.first_name} ${row.original.profiles.last_name}`
+              : "Không rõ"}
+          </div>
+          <div className="text-xs text-gray-500">
+            {row.original.profiles?.email ?? "—"}
+          </div>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "action",
+      header: "Hành động",
+      cell: ({ row }) => (
+        <Badge className={getActionColor(row.original.action)}>
+          {row.original.action}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "subject",
+      header: "Đối tượng",
+      cell: ({ row }) => (
+        <span className="capitalize text-sm">{row.original.subject}</span>
+      ),
+    },
+    {
+      accessorKey: "created_at",
+      header: "Thời gian",
+      cell: ({ row }) => (
+        <span className="text-sm text-gray-500">
+          {row.original.created_at
+            ? new Date(row.original.created_at).toLocaleString("vi-VN")
+            : "Không rõ"}
+        </span>
+      ),
+    },
+  ];
+
+  return (
+    <>
+      <DataTable
+        columns={columns}
+        data={filteredData}
+        filterComponent={
+          <DataTableFilter
+            filterType="activity"
+            onFilterChange={(f) =>
+              setFilters({
+                actions: f.actions ?? [],
+                subjects: f.subjects ?? [],
+              })
+            }
+          />
+        }
+        onRowClick={(row) => {
+          setSelectedLog(row);
+          setIsSheetOpen(true);
+        }}
+        emptyMessage="Không có nhật ký hoạt động nào."
+        searchPlaceholder="Tìm theo nhân viên hoặc đối tượng"
+        isLoading={isLoading}
+        loadingText="Đang tải nhật ký..."
+        error={error}
+        errorText="Lỗi khi tải nhật ký"
+      />
+
+      <ActivityLogDetailsSheet
+        open={isSheetOpen}
+        onOpenChange={setIsSheetOpen}
+        log={selectedLog}
+      />
+    </>
+  );
+};
+
+export default ActivityLogsTable;

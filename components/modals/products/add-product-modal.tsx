@@ -1,0 +1,116 @@
+"use client";
+
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import ProductForm, {
+  ProductFormValues,
+  productSchema,
+} from "@/components/forms/product-form";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { createClient } from "@/lib/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { useProfile } from "@/hooks/useProfile";
+import { useActivityLogger } from "@/hooks/useActivityLogger";
+import { uploadProductImage } from "@/lib/upload-product-image";
+import { ProductImage } from "@/types/product.types";
+
+interface AddProductModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+const AddProductModal = ({ open, onOpenChange }: AddProductModalProps) => {
+  const supabase = createClient();
+  const queryClient = useQueryClient();
+  const { data: profile } = useProfile();
+  const { log } = useActivityLogger();
+
+  const form = useForm<ProductFormValues>({
+    resolver: zodResolver(productSchema),
+    defaultValues: {
+      name: "",
+      price: 0,
+      image: null,
+      category: "",
+    },
+  });
+
+  const handleDialogChange = () => {
+    onOpenChange(false);
+    form.reset();
+  };
+
+  const handleImageUpload = async (file: File): Promise<ProductImage> => {
+    if (!profile?.business_id) throw new Error("No business ID");
+    return uploadProductImage({
+      supabase,
+      file,
+      businessId: profile.business_id,
+    });
+  };
+
+  const onSubmit = async (values: ProductFormValues) => {
+    try {
+      const { data, error } = await supabase
+        .from("products")
+        .insert([
+          {
+            name: values.name,
+            price: values.price,
+            category: values.category,
+            image: values.image, // jsonb: { file_name, file_size, mime_type, url }
+            business_id: profile?.business_id,
+          },
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      await log({
+        action: "create",
+        subject: "product",
+        entityId: data.id,
+        entityName: data.name,
+      });
+
+      await queryClient.invalidateQueries({ queryKey: ["products"] });
+      toast.success("Product added successfully");
+      onOpenChange(false);
+      form.reset();
+    } catch (error) {
+      console.error("Add product error:", error);
+      toast.error("Failed to add product. Please try again.");
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleDialogChange}>
+      <DialogContent>
+        <DialogHeader className="text-left">
+          <DialogTitle>Add Product</DialogTitle>
+          <DialogDescription>
+            Add a new product to your inventory
+          </DialogDescription>
+        </DialogHeader>
+        <ProductForm
+          form={form}
+          onSubmit={onSubmit}
+          handleCancel={handleDialogChange}
+          submitLabel="Add Product"
+          submitLoadingLabel="Adding Product..."
+          onImageUpload={handleImageUpload}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default AddProductModal;

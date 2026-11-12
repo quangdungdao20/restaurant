@@ -1,0 +1,464 @@
+-- ============================================================
+-- SEED: Brewhaus Coffee
+--
+-- Accounts:
+--   Owner:   owner@brewhaus.com   / Brewhaus2024!
+--   Admin:   admin@brewhaus.com   / Brewhaus2024!
+--   Manager: manager@brewhaus.com / Brewhaus2024!
+--   Staff 1: staff1@brewhaus.com  / Brewhaus2024!
+--   Staff 2: staff2@brewhaus.com  / Brewhaus2024!
+-- ============================================================
+
+-- EXTENSIONS
+create extension if not exists pgcrypto;
+
+
+-- ============================================================
+-- AUTH USERS
+-- ============================================================
+
+insert into auth.users (
+  id, instance_id, aud, role, email, encrypted_password,
+  email_confirmed_at, invited_at, confirmation_token, confirmation_sent_at,
+  recovery_token, recovery_sent_at, email_change_token_new, email_change,
+  email_change_sent_at, last_sign_in_at, raw_app_meta_data, raw_user_meta_data,
+  is_super_admin, created_at, updated_at, phone, phone_confirmed_at,
+  phone_change, phone_change_token, phone_change_sent_at,
+  email_change_token_current, email_change_confirm_status, banned_until,
+  reauthentication_token, reauthentication_sent_at, is_sso_user, deleted_at
+) values
+  -- Owner
+  (
+    'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    '00000000-0000-0000-0000-000000000000',
+    'authenticated', 'authenticated',
+    'owner@brewhaus.com',
+    extensions.crypt('Brewhaus2024!', extensions.gen_salt('bf')),
+    now(), null, '', null, '', null, '', '', null, now(),
+    '{"provider":"email","providers":["email"]}',
+    '{"business_name":"Brewhaus Coffee","first_name":"Miguel","last_name":"Santos","phone":"09171234567"}'::jsonb,
+    null, now(), now(), null, null, '', '', null, '', 0, null, '', null, false, null
+  ),
+  -- Admin
+  (
+    'b1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    '00000000-0000-0000-0000-000000000000',
+    'authenticated', 'authenticated',
+    'admin@brewhaus.com',
+    extensions.crypt('Brewhaus2024!', extensions.gen_salt('bf')),
+    now(), null, '', null, '', null, '', '', null, now(),
+    '{"provider":"email","providers":["email"]}',
+    '{"first_name":"Isabella","last_name":"Reyes","phone":"09181234567"}'::jsonb,
+    null, now(), now(), null, null, '', '', null, '', 0, null, '', null, false, null
+  ),
+  -- Manager
+  (
+    'c1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    '00000000-0000-0000-0000-000000000000',
+    'authenticated', 'authenticated',
+    'manager@brewhaus.com',
+    extensions.crypt('Brewhaus2024!', extensions.gen_salt('bf')),
+    now(), null, '', null, '', null, '', '', null, now(),
+    '{"provider":"email","providers":["email"]}',
+    '{"first_name":"Carlos","last_name":"Mendoza","phone":"09191234567"}'::jsonb,
+    null, now(), now(), null, null, '', '', null, '', 0, null, '', null, false, null
+  ),
+  -- Staff 1
+  (
+    'd1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    '00000000-0000-0000-0000-000000000000',
+    'authenticated', 'authenticated',
+    'staff1@brewhaus.com',
+    extensions.crypt('Brewhaus2024!', extensions.gen_salt('bf')),
+    now(), null, '', null, '', null, '', '', null, now(),
+    '{"provider":"email","providers":["email"]}',
+    '{"first_name":"Anna","last_name":"Cruz","phone":"09201234567"}'::jsonb,
+    null, now(), now(), null, null, '', '', null, '', 0, null, '', null, false, null
+  ),
+  -- Staff 2
+  (
+    'e1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    '00000000-0000-0000-0000-000000000000',
+    'authenticated', 'authenticated',
+    'staff2@brewhaus.com',
+    extensions.crypt('Brewhaus2024!', extensions.gen_salt('bf')),
+    now(), null, '', null, '', null, '', '', null, now(),
+    '{"provider":"email","providers":["email"]}',
+    '{"first_name":"Rico","last_name":"Dela Cruz","phone":"09211234567"}'::jsonb,
+    null, now(), now(), null, null, '', '', null, '', 0, null, '', null, false, null
+  )
+on conflict (id) do update set
+  email = excluded.email,
+  encrypted_password = excluded.encrypted_password,
+  email_confirmed_at = excluded.email_confirmed_at,
+  raw_user_meta_data = excluded.raw_user_meta_data,
+  updated_at = excluded.updated_at;
+
+
+-- ============================================================
+-- AUTH IDENTITIES
+-- ============================================================
+
+insert into auth.identities (
+  id, user_id, provider, identity_data, provider_id, created_at, updated_at
+) values
+  (
+    'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    'email',
+    '{"sub":"a1b2c3d4-e5f6-7890-abcd-ef1234567890","email":"owner@brewhaus.com"}'::jsonb,
+    'owner@brewhaus.com', now(), now()
+  ),
+  (
+    'b1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    'b1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    'email',
+    '{"sub":"b1b2c3d4-e5f6-7890-abcd-ef1234567890","email":"admin@brewhaus.com"}'::jsonb,
+    'admin@brewhaus.com', now(), now()
+  ),
+  (
+    'c1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    'c1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    'email',
+    '{"sub":"c1b2c3d4-e5f6-7890-abcd-ef1234567890","email":"manager@brewhaus.com"}'::jsonb,
+    'manager@brewhaus.com', now(), now()
+  ),
+  (
+    'd1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    'd1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    'email',
+    '{"sub":"d1b2c3d4-e5f6-7890-abcd-ef1234567890","email":"staff1@brewhaus.com"}'::jsonb,
+    'staff1@brewhaus.com', now(), now()
+  ),
+  (
+    'e1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    'e1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    'email',
+    '{"sub":"e1b2c3d4-e5f6-7890-abcd-ef1234567890","email":"staff2@brewhaus.com"}'::jsonb,
+    'staff2@brewhaus.com', now(), now()
+  )
+on conflict (provider_id, provider) do nothing;
+
+
+-- ============================================================
+-- BUSINESS
+-- ============================================================
+
+insert into public.businesses (id, name, address, phone, owner_id)
+values (
+  'f1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  'Brewhaus Coffee',
+  '123 Katipunan Ave, Quezon City, Metro Manila',
+  '(02) 8123-4567',
+  'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+)
+on conflict (id) do update set
+  name    = excluded.name,
+  address = excluded.address,
+  phone   = excluded.phone;
+
+
+-- ============================================================
+-- TABLES
+-- ============================================================
+
+insert into public.tables (business_id, table_number, capacity, status)
+select
+  'f1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  table_number,
+  case
+    when table_number <= 4 then 2
+    when table_number <= 8 then 4
+    else 6
+  end,
+  'available'
+from generate_series(1, 10) as table_number
+on conflict (business_id, table_number) do update set
+  capacity = excluded.capacity,
+  status = excluded.status;
+
+
+-- ============================================================
+-- PROFILES
+-- (trigger won't fire on direct auth.users insert)
+-- ============================================================
+
+insert into public.profiles (id, business_id, email, first_name, last_name, phone, role, status)
+values
+  (
+    'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    'f1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    'owner@brewhaus.com', 'Miguel', 'Santos', '09171234567',
+    'Owner', 'Active'
+  ),
+  (
+    'b1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    'f1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    'admin@brewhaus.com', 'Isabella', 'Reyes', '09181234567',
+    'Admin', 'Active'
+  ),
+  (
+    'c1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    'f1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    'manager@brewhaus.com', 'Carlos', 'Mendoza', '09191234567',
+    'Manager', 'Active'
+  ),
+  (
+    'd1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    'f1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    'staff1@brewhaus.com', 'Anna', 'Cruz', '09201234567',
+    'Staff', 'Active'
+  ),
+  (
+    'e1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    'f1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    'staff2@brewhaus.com', 'Rico', 'Dela Cruz', '09211234567',
+    'Staff', 'Active'
+  )
+on conflict (id) do update set
+  business_id = excluded.business_id,
+  first_name  = excluded.first_name,
+  last_name   = excluded.last_name,
+  phone       = excluded.phone,
+  role        = excluded.role,
+  status      = excluded.status;
+
+
+-- ============================================================
+-- PRODUCTS
+-- ============================================================
+
+insert into public.products (name, price, image, category, business_id) values
+  ('Chocolate Chip Cookie', 2.49, '{"file_name": "chocolate-chip-cookie.jpg", "file_size": 43110, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=300&h=300&fit=crop"}'::jsonb, 'Dessert', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Americano', 3.49, '{"file_name": "americano.jpg", "file_size": 38739, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=300&h=300&fit=crop"}'::jsonb, 'Coffee', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Chicken Wrap', 8.49, '{"file_name": "chicken-wrap.jpg", "file_size": 64409, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=300&h=300&fit=crop"}'::jsonb, 'Food', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Strawberry Tart', 5.49, '{"file_name": "strawberry-tart.jpg", "file_size": 26687, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1488477181946-6428a0291777?w=300&h=300&fit=crop"}'::jsonb, 'Dessert', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Chai Latte', 4.59, '{"file_name": "chai-latte.jpg", "file_size": 81250, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1561336313-0bd5e0b27ec8?w=300&h=300&fit=crop"}'::jsonb, 'Coffee', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Soup of the Day', 5.99, '{"file_name": "soup-of-the-day.jpg", "file_size": 43400, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=300&h=300&fit=crop"}'::jsonb, 'Food', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Red Velvet Cake', 5.99, '{"file_name": "red-velvet-cake.jpg", "file_size": 31241, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1586788224331-947f68671cf1?w=300&h=300&fit=crop"}'::jsonb, 'Dessert', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Frappuccino', 5.29, '{"file_name": "frappuccino.jpg", "file_size": 29931, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=300&h=300&fit=crop"}'::jsonb, 'Coffee', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Avocado Toast', 6.99, '{"file_name": "avocado-toast.jpg", "file_size": 67464, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1588137378633-dea1336ce1e2?w=300&h=300&fit=crop"}'::jsonb, 'Food', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Tiramisu', 6.49, '{"file_name": "tiramisu.jpg", "file_size": 70240, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=300&h=300&fit=crop"}'::jsonb, 'Dessert', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Espresso', 3.99, '{"file_name": "espresso.jpg", "file_size": 22213, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1510707577719-ae7c14805e3a?w=300&h=300&fit=crop"}'::jsonb, 'Coffee', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('French Toast', 7.99, '{"file_name": "french-toast.jpg", "file_size": 76531, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=300&h=300&fit=crop"}'::jsonb, 'Food', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Macarons (6 pack)', 8.99, '{"file_name": "macarons-6-pack.jpg", "file_size": 40333, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1569864358642-9d1684040f43?w=300&h=300&fit=crop"}'::jsonb, 'Dessert', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Gibraltar', 4.49, '{"file_name": "gibraltar.jpg", "file_size": 55152, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1578314675249-a6910f80cc4e?w=300&h=300&fit=crop"}'::jsonb, 'Coffee', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Caesar Salad', 8.99, '{"file_name": "caesar-salad.jpg", "file_size": 58853, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1550304943-4f24f54ddde9?w=300&h=300&fit=crop"}'::jsonb, 'Food', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Blueberry Muffin', 3.29, '{"file_name": "blueberry-muffin.jpg", "file_size": 80588, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1607958996333-41aef7caefaa?w=300&h=300&fit=crop"}'::jsonb, 'Dessert', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Matcha Latte', 4.89, '{"file_name": "matcha-latte.jpg", "file_size": 42259, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=300&h=300&fit=crop"}'::jsonb, 'Coffee', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Breakfast Burrito', 8.99, '{"file_name": "breakfast-burrito.jpg", "file_size": 59784, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=300&h=300&fit=crop"}'::jsonb, 'Food', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Creme Brulee', 6.99, '{"file_name": "creme-brulee.jpg", "file_size": 56967, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1470124182917-cc6e71b22ecc?w=300&h=300&fit=crop"}'::jsonb, 'Dessert', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Latte', 4.29, '{"file_name": "latte.jpg", "file_size": 40761, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1561882468-9110e03e0f78?w=300&h=300&fit=crop"}'::jsonb, 'Coffee', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Croissant', 2.99, '{"file_name": "croissant.jpg", "file_size": 20502, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=300&h=300&fit=crop"}'::jsonb, 'Food', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Lemon Tart', 5.79, '{"file_name": "lemon-tart.jpg", "file_size": 71489, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1519915028121-7d3463d20b13?w=300&h=300&fit=crop"}'::jsonb, 'Dessert', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Cold Brew', 3.89, '{"file_name": "cold-brew.jpg", "file_size": 22694, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=300&h=300&fit=crop"}'::jsonb, 'Coffee', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Club Sandwich', 9.49, '{"file_name": "club-sandwich.jpg", "file_size": 29009, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1567234669003-dce7a7a88821?w=300&h=300&fit=crop"}'::jsonb, 'Food', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Apple Pie', 4.99, '{"file_name": "apple-pie.jpg", "file_size": 36616, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1562007908-17c67e878c88?w=300&h=300&fit=crop"}'::jsonb, 'Dessert', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Vienna Coffee', 5.19, '{"file_name": "vienna-coffee.jpg", "file_size": 40694, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=300&h=300&fit=crop"}'::jsonb, 'Coffee', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Quinoa Bowl', 9.99, '{"file_name": "quinoa-bowl.jpg", "file_size": 35272, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1546793665-c74683f339c1?w=300&h=300&fit=crop"}'::jsonb, 'Food', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Chocolate Mousse', 5.49, '{"file_name": "chocolate-mousse.jpg", "file_size": 32483, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=300&h=300&fit=crop"}'::jsonb, 'Dessert', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Iced Coffee', 4.19, '{"file_name": "iced-coffee.jpg", "file_size": 30408, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=300&h=300&fit=crop"}'::jsonb, 'Coffee', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Eggs Benedict', 11.99, '{"file_name": "eggs-benedict.jpg", "file_size": 24689, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1608039755401-742074f0548d?w=300&h=300&fit=crop"}'::jsonb, 'Food', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Chocolate Eclair', 4.79, '{"file_name": "chocolate-eclair.jpg", "file_size": 60030, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1558326567-98ae2405596b?w=300&h=300&fit=crop"}'::jsonb, 'Dessert', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Cappuccino', 4.49, '{"file_name": "cappuccino.jpg", "file_size": 32376, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=300&h=300&fit=crop"}'::jsonb, 'Coffee', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Bagel with Cream Cheese', 3.99, '{"file_name": "bagel-with-cream-cheese.jpg", "file_size": 52608, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1585378411895-1d9b8f3df9fa?w=300&h=300&fit=crop"}'::jsonb, 'Food', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Fruit Tart', 6.29, '{"file_name": "fruit-tart.jpg", "file_size": 51507, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1488477181946-6428a0291777?w=300&h=300&fit=crop"}'::jsonb, 'Dessert', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Turkish Coffee', 4.99, '{"file_name": "turkish-coffee.jpg", "file_size": 62389, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=300&h=300&fit=crop"}'::jsonb, 'Coffee', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Acai Bowl', 10.99, '{"file_name": "acai-bowl.jpg", "file_size": 66907, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1590301157890-4810ed352733?w=300&h=300&fit=crop"}'::jsonb, 'Food', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Chocolate Brownie', 4.49, '{"file_name": "chocolate-brownie.jpg", "file_size": 81424, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=300&h=300&fit=crop"}'::jsonb, 'Dessert', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Mocha', 4.79, '{"file_name": "mocha.jpg", "file_size": 54994, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1578314675249-a6910f80cc4e?w=300&h=300&fit=crop"}'::jsonb, 'Coffee', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Panini', 7.99, '{"file_name": "panini.jpg", "file_size": 79996, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1481070414801-51fd732d7184?w=300&h=300&fit=crop"}'::jsonb, 'Food', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Banana Bread', 3.99, '{"file_name": "banana-bread.jpg", "file_size": 28723, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1605286978633-2dec93ff88a2?w=300&h=300&fit=crop"}'::jsonb, 'Dessert', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Macchiato', 4.69, '{"file_name": "macchiato.jpg", "file_size": 75696, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1485808191679-5f86510bd9d4?w=300&h=300&fit=crop"}'::jsonb, 'Coffee', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Grilled Sandwich', 7.49, '{"file_name": "grilled-sandwich.jpg", "file_size": 46368, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=300&h=300&fit=crop"}'::jsonb, 'Food', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Ice Cream Sundae', 4.99, '{"file_name": "ice-cream-sundae.jpg", "file_size": 47409, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=300&h=300&fit=crop"}'::jsonb, 'Dessert', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Flat White', 4.39, '{"file_name": "flat-white.jpg", "file_size": 63520, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1592663527359-cf6642f54cff?w=300&h=300&fit=crop"}'::jsonb, 'Coffee', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Pasta Salad', 6.99, '{"file_name": "pasta-salad.jpg", "file_size": 18801, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=300&h=300&fit=crop"}'::jsonb, 'Food', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('New York Cheesecake', 5.99, '{"file_name": "new-york-cheesecake.jpg", "file_size": 69543, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?w=300&h=300&fit=crop"}'::jsonb, 'Dessert', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Pecan Pie', 5.79, '{"file_name": "pecan-pie.jpg", "file_size": 19164, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1562007908-17c67e878c88?w=300&h=300&fit=crop"}'::jsonb, 'Dessert', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Carrot Cake', 5.29, '{"file_name": "carrot-cake.jpg", "file_size": 24724, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1621303837174-89787a7d4729?w=300&h=300&fit=crop"}'::jsonb, 'Dessert', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Donut Assortment', 7.99, '{"file_name": "donut-assortment.jpg", "file_size": 80320, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1551024601-bec78aea704b?w=300&h=300&fit=crop"}'::jsonb, 'Dessert', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('Panna Cotta', 5.99, '{"file_name": "panna-cotta.jpg", "file_size": 28826, "mime_type": "image/jpeg", "url": "https://images.unsplash.com/photo-1488477181946-6428a0291777?w=300&h=300&fit=crop"}'::jsonb, 'Dessert', 'f1b2c3d4-e5f6-7890-abcd-ef1234567890');
+
+
+-- ============================================================
+-- INVENTORY
+-- ============================================================
+
+insert into public.inventory (business_id, product_id, sku, quantity, reorder_level)
+select
+  'f1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  id,
+  'SKU-' || upper(substring(md5(name) from 1 for 8)),
+  case
+    when category = 'Coffee'  then floor(random() * 50 + 50)::int
+    when category = 'Food'    then floor(random() * 30 + 20)::int
+    when category = 'Dessert' then floor(random() * 40 + 30)::int
+  end,
+  case
+    when category = 'Coffee'  then 15
+    when category = 'Food'    then 10
+    when category = 'Dessert' then 10
+  end
+from public.products
+where business_id = 'f1b2c3d4-e5f6-7890-abcd-ef1234567890';
+
+
+-- ============================================================
+-- PROMO CODES
+-- ============================================================
+
+insert into public.promo_codes (business_id, code, type, value, min_order, is_active) values
+  -- Percentage discounts
+  ('f1b2c3d4-e5f6-7890-abcd-ef1234567890', 'WELCOME10',  'percentage', 10.00,  0.00,  true),
+  ('f1b2c3d4-e5f6-7890-abcd-ef1234567890', 'SAVE15',     'percentage', 15.00,  20.00, true),
+  ('f1b2c3d4-e5f6-7890-abcd-ef1234567890', 'BIGSPEND20', 'percentage', 20.00,  50.00, true),
+  ('f1b2c3d4-e5f6-7890-abcd-ef1234567890', 'STAFF50',    'percentage', 50.00,  0.00,  true),
+  ('f1b2c3d4-e5f6-7890-abcd-ef1234567890', 'OLDPROMO',   'percentage', 10.00,  0.00,  false),
+  -- Fixed discounts
+  ('f1b2c3d4-e5f6-7890-abcd-ef1234567890', 'FLAT5',      'fixed',       5.00,  15.00, true),
+  ('f1b2c3d4-e5f6-7890-abcd-ef1234567890', 'FLAT10',     'fixed',      10.00,  30.00, true),
+  ('f1b2c3d4-e5f6-7890-abcd-ef1234567890', 'TREAT3',     'fixed',       3.00,   0.00, true),
+  ('f1b2c3d4-e5f6-7890-abcd-ef1234567890', 'EXPIREDFIX', 'fixed',       5.00,   0.00, false)
+on conflict (business_id, code) do update set
+  type      = excluded.type,
+  value     = excluded.value,
+  min_order = excluded.min_order,
+  is_active = excluded.is_active;
+
+
+-- ============================================================
+-- SALES TARGETS
+-- 2025 full year + 2026 up to current month
+-- Mix of achieved and not achieved
+-- ============================================================
+
+insert into public.sales_targets (business_id, month, target_amount, created_by) values
+  -- 2025
+  ('f1b2c3d4-e5f6-7890-abcd-ef1234567890', '2025-01-01', 3200.00, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('f1b2c3d4-e5f6-7890-abcd-ef1234567890', '2025-02-01', 3200.00, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('f1b2c3d4-e5f6-7890-abcd-ef1234567890', '2025-03-01', 3500.00, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('f1b2c3d4-e5f6-7890-abcd-ef1234567890', '2025-04-01', 3500.00, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('f1b2c3d4-e5f6-7890-abcd-ef1234567890', '2025-05-01', 3800.00, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('f1b2c3d4-e5f6-7890-abcd-ef1234567890', '2025-06-01', 3800.00, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('f1b2c3d4-e5f6-7890-abcd-ef1234567890', '2025-07-01', 4000.00, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('f1b2c3d4-e5f6-7890-abcd-ef1234567890', '2025-08-01', 4000.00, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('f1b2c3d4-e5f6-7890-abcd-ef1234567890', '2025-09-01', 4200.00, 'b1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('f1b2c3d4-e5f6-7890-abcd-ef1234567890', '2025-10-01', 4200.00, 'b1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('f1b2c3d4-e5f6-7890-abcd-ef1234567890', '2025-11-01', 4500.00, 'b1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('f1b2c3d4-e5f6-7890-abcd-ef1234567890', '2025-12-01', 5000.00, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  -- 2026
+  ('f1b2c3d4-e5f6-7890-abcd-ef1234567890', '2026-01-01', 4800.00, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('f1b2c3d4-e5f6-7890-abcd-ef1234567890', '2026-02-01', 4800.00, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+  ('f1b2c3d4-e5f6-7890-abcd-ef1234567890', '2026-03-01', 5000.00, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890')
+on conflict (business_id, month) do update set
+  target_amount = excluded.target_amount,
+  created_by    = excluded.created_by;
+
+
+-- ============================================================
+-- TRANSACTIONS + TRANSACTION ITEMS
+-- 30 transactions over the last 30 days
+-- ============================================================
+
+do $$
+declare
+  v_business_id   uuid    := 'f1b2c3d4-e5f6-7890-abcd-ef1234567890';
+  v_staff_ids     uuid[]  := array[
+    'd1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    'e1b2c3d4-e5f6-7890-abcd-ef1234567890'
+  ];
+  v_tx_id         uuid;
+  v_tx_number     text;
+  v_subtotal      numeric(10,2);
+  v_discount      numeric(10,2);
+  v_promo         record;
+  v_product       record;
+  v_qty           int;
+  v_item_subtotal numeric(10,2);
+  v_item_count    int;
+  v_payments      payment_method[]     := array['Cash', 'Credit Card', 'Debit Card', 'E-Wallet']::payment_method[];
+  v_statuses      transaction_status[] := array['Completed', 'Completed', 'Completed', 'Completed', 'Completed', 'Completed', 'Completed', 'Pending', 'Pending', 'Cancelled']::transaction_status[];
+  v_customers     text[]               := array['Maria', 'Jose', 'Anna', 'Carlo', 'Lea', 'Rico', 'Diana', 'Mark', 'Sofia', 'Luis', null, null, null];
+  -- Promo codes to rotate through (only active ones, mix of types)
+  v_promo_codes   text[]               := array['WELCOME10', 'FLAT5', 'SAVE15', 'FLAT10', 'TREAT3', null, null, null, null, null];
+begin
+  for i in 1..30 loop
+    v_tx_id     := gen_random_uuid();
+    v_tx_number := 'TRX-2026-' || lpad(i::text, 6, '0');
+    v_subtotal  := 0;
+    v_discount  := 0;
+
+    insert into public.transactions (
+      id, business_id, transaction_number, customer_name,
+      subtotal, discount_amount, promo_code,
+      tax_rate, tax_amount, total_amount,
+      payment_method, status, user_id,
+      created_at, updated_at
+    ) values (
+      v_tx_id,
+      v_business_id,
+      v_tx_number,
+      v_customers[1 + (i % array_length(v_customers, 1))],
+      0, 0, null,
+      0.12, 0, 0,
+      v_payments[1 + (i % array_length(v_payments, 1))],
+      v_statuses[1 + (i % array_length(v_statuses, 1))],
+      v_staff_ids[1 + (i % array_length(v_staff_ids, 1))],
+      now() - ((30 - i) || ' days')::interval,
+      now() - ((30 - i) || ' days')::interval
+    );
+
+    v_item_count := 1 + (i % 4);
+
+    for j in 1..v_item_count loop
+      select * into v_product
+      from public.products
+      where business_id = v_business_id
+      order by id
+      offset ((i * j) % 50)
+      limit 1;
+
+      v_qty           := 1 + (j % 3);
+      v_item_subtotal := v_product.price * v_qty;
+      v_subtotal      := v_subtotal + v_item_subtotal;
+
+      insert into public.transaction_items (
+        transaction_id, product_id, product_name,
+        product_price, quantity, subtotal
+      ) values (
+        v_tx_id, v_product.id, v_product.name,
+        v_product.price, v_qty, v_item_subtotal
+      );
+    end loop;
+
+    -- Apply a promo code to every 3rd transaction (realistic usage rate)
+    if v_promo_codes[1 + (i % array_length(v_promo_codes, 1))] is not null then
+      select * into v_promo
+      from public.promo_codes
+      where business_id = v_business_id
+        and code = v_promo_codes[1 + (i % array_length(v_promo_codes, 1))]
+        and v_subtotal >= min_order;
+
+      if found then
+        v_discount := case
+          when v_promo.type = 'percentage'
+            then round(v_subtotal * v_promo.value / 100, 2)
+          else
+            least(v_promo.value, v_subtotal)
+        end;
+      end if;
+    end if;
+
+    update public.transactions
+    set
+      subtotal        = v_subtotal,
+      discount_amount = v_discount,
+      promo_code      = case when v_discount > 0 then v_promo_codes[1 + (i % array_length(v_promo_codes, 1))] else null end,
+      tax_amount      = round((v_subtotal - v_discount) * 0.12, 2),
+      total_amount    = round((v_subtotal - v_discount) * 1.12, 2)
+    where id = v_tx_id;
+
+  end loop;
+end;
+$$;
